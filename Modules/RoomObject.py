@@ -13,6 +13,7 @@ class RoomObject:
 
         # The following are only implemented on objects that implement this new system of RoomObject
         self._callbacks = []
+        self._network_hook = None
         self._values = {}
         self._health = {}
 
@@ -72,7 +73,19 @@ class RoomObject:
         """
         for callback, name in self._callbacks:
             if name == event_name:
-                callback(*args, **kwargs)
+                try:
+                    callback(*args, **kwargs)
+                except Exception as e:
+                    logging.error(f"Error in callback {callback} for event {event_name}: {e}")
+        if self._network_hook:
+            self._network_hook(self, event_name, *args, **kwargs)
+
+    def network_event_hook(self, callback):
+        """
+        Attach a callback to the network event hook
+        :param callback: The callback function to call
+        """
+        self._network_hook = callback
 
     def __str__(self):
         return f"{self.object_name}={self.object_type}"

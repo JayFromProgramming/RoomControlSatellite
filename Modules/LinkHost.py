@@ -93,6 +93,29 @@ class LinkHost(RoomModule):
             finally:
                 await asyncio.sleep(5)
 
+    def fire_event(self, room_object, event_name, *args, **kwargs):
+        logging.info(f"Firing event {event_name} for {room_object.object_name}")
+        asyncio.create_task(self.send_event(room_object, event_name, *args, **kwargs))
+
+    async def send_event(self, room_object, event_name, *args, **kwargs):
+        try:
+            async with self.session.post(f"http://{self.host_address}:47670/event",
+                                         json={"name": room_object.object_name,
+                                               "current_ip": self.webserver_address,
+                                               "object": room_object.object_name,
+                                               "event": event_name,
+                                               "args": args,
+                                               "kwargs": kwargs,
+                                               "auth": self.room_controller.auth}) as response:
+                if response.status != 200:
+                    logging.warning(f"Failed to send event: {response.status}")
+                else:
+                    logging.info("Event sent")
+        except Exception as e:
+            logging.error(f"Error sending event: {e}")
+            logging.exception(e)
+
+
     async def downlink(self, request):
         data = await request.json()
         logging.info(f"Received downlink: {data}")

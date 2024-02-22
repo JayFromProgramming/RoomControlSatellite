@@ -2,6 +2,8 @@ import json
 import time
 
 from loguru import logger as logging
+
+from Modules.Decorators import background
 from Modules.RoomModule import RoomModule
 from Modules.RoomObject import RoomObject
 
@@ -80,13 +82,16 @@ class PinWatcher(RoomObject):
             self._last_falling = time.time()
 
         logging.debug(f"PinWatcher ({self.name()}): Pin {pin} changed state to {self.state}")
-        super().set_value("triggered", self.state)
-        super().set_value("active_for", 0 if not self.state else time.time() - self._last_rising)
-        super().set_value("last_active", self._last_rising)
         super().emit_event("state_change", self.get_state())
         # Setup new event detect
         GPIO.remove_event_detect(self.pin)
         GPIO.add_event_detect(self.pin, self.edge, callback=self._callback, bouncetime=self.bouncetime)
+
+    @background
+    def update_value(self):
+        super().set_value("triggered", self.state)
+        super().set_value("active_for", 0 if not self.state else time.time() - self._last_rising)
+        super().set_value("last_active", self._last_rising)
 
     def name(self):
         return self._name
