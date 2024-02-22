@@ -76,6 +76,10 @@ class PinWatcher(RoomObject):
             self._last_falling = time.time()
 
         logging.debug(f"PinWatcher ({self.name()}): Pin {pin} changed state to {self.state}")
+        super().set_value("on", self.enabled)
+        super().set_value("triggered", self.state)
+        super().set_value("active_for", 0 if not self.state else time.time() - self._last_rising)
+        super().set_value("last_active", self._last_rising)
         super().emit_event("state_change", self.get_state())
         # Setup new event detect
         GPIO.remove_event_detect(self.pin)
