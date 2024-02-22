@@ -56,7 +56,7 @@ class PinWatcher(RoomObject):
             logging.warning(f"PinWatcher ({name}): Not initializing, RPi.GPIO not found")
             return
 
-        self.edge = edge if edge is not None else GPIO.BOTH
+        self.edge = GPIO.RISING if edge else GPIO.BOTH
         try:
             GPIO.setup(self.pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
             self.state = GPIO.input(self.pin) if self.normal_open else not GPIO.input(self.pin)
