@@ -103,7 +103,7 @@ class LinkHost(RoomModule):
     async def send_event(self, room_object, event_name, *args, **kwargs):
         try:
             async with self.session.post(f"http://{self.host_address}:47670/event",
-                                         json={"name": room_object.object_name,
+                                         json={"name": self.room_controller.name,
                                                "current_ip": self.webserver_address,
                                                "object": room_object.object_name,
                                                "event": event_name,
