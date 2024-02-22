@@ -82,19 +82,19 @@ class LinkHost(RoomModule):
             try:
                 for room_object in self.room_controller.get_all_objects():
                     room_object._network_hook = self.fire_event
-                logging.info("Sending uplink")
-                print(self.generate_payload())
+                # logging.info("Sending uplink")
+                # print(self.generate_payload())
                 async with self.session.post(f"http://{self.host_address}:47670/uplink",
                                              json=self.generate_payload()) as response:
                     if response.status != 200:
                         logging.warning(f"Failed to send uplink: {response.status}")
                     else:
-                        logging.info("Uplink sent")
+                        logging.debug("Uplink sent")
             except Exception as e:
                 logging.error(f"Error sending uplink: {e}")
                 logging.exception(e)
             finally:
-                await asyncio.sleep(5)
+                await asyncio.sleep(15)
 
     def fire_event(self, room_object, event_name, *args, **kwargs):
         logging.info(f"Firing event {event_name} for {room_object.object_name}")
@@ -124,5 +124,5 @@ class LinkHost(RoomModule):
         return web.Response(text="OK")
 
     async def uplink(self, request):
-        logging.info(f"Received uplink")
-        return web.Response(text="OK")
+        logging.info("Received uplink request")
+        return web.json_response(self.generate_payload())
