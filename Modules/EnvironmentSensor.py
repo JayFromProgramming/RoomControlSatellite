@@ -104,6 +104,7 @@ class SensorValue(RoomObject):
 
     def get_health(self):
         return {
+            "online": True,
             "fault": self._fault,
             "reason": self._reason
         }
