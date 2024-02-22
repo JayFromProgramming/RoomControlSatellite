@@ -52,8 +52,8 @@ class RoomObject:
             return None
         return self._values[key]
 
-    def set_value(self, key, value):
-        if self._values.get(key, None) != value:
+    def set_value(self, key, value, block_event=False):
+        if self._values.get(key, None) != value and not block_event:
             self.emit_event(f"on_{key}_update", value)
         self._values[key] = value
 

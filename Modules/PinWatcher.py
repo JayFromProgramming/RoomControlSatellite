@@ -73,6 +73,8 @@ class PinWatcher(RoomObject):
             self.fault_message = str(e)
             logging.warning(f"PinWatcher ({name}): Error initializing: {e}")
 
+        self.update_value()
+
     def _callback(self, pin):
         self.state = GPIO.input(self.pin) if self.normal_open else not GPIO.input(self.pin)
 
@@ -89,9 +91,12 @@ class PinWatcher(RoomObject):
 
     @background
     def update_value(self):
-        super().set_value("triggered", self.state)
-        super().set_value("active_for", 0 if not self.state else time.time() - self._last_rising)
-        super().set_value("last_active", self._last_rising)
+        while True:
+            super().set_value("triggered", self.state)
+            super().set_value("active_for", 0 if not self.state else time.time() - self._last_rising,
+                              block_event=True)
+            super().set_value("last_active", self._last_rising)
+            time.sleep(1)
 
     def name(self):
         return self._name
