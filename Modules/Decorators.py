@@ -1,6 +1,7 @@
 import functools
 from threading import Thread
 
+
 # Create a decorator for an @property method to indicate if it is allowed to be called by the API
 def api_action(func):
     @functools.wraps(func)
