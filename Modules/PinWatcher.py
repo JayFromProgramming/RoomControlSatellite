@@ -56,6 +56,10 @@ class PinWatcher(RoomObject):
             logging.warning(f"PinWatcher ({name}): Not initializing, RPi.GPIO not found")
             return
 
+        super().set_value("triggered", False)
+        super().set_value("active_for", 0)
+        super().set_value("last_active", 0)
+
         self.edge = GPIO.RISING if edge else GPIO.BOTH
         try:
             GPIO.setup(self.pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
@@ -76,7 +80,6 @@ class PinWatcher(RoomObject):
             self._last_falling = time.time()
 
         logging.debug(f"PinWatcher ({self.name()}): Pin {pin} changed state to {self.state}")
-        super().set_value("on", self.enabled)
         super().set_value("triggered", self.state)
         super().set_value("active_for", 0 if not self.state else time.time() - self._last_rising)
         super().set_value("last_active", self._last_rising)
@@ -90,7 +93,6 @@ class PinWatcher(RoomObject):
 
     def get_state(self):
         return {
-            "on": self.enabled,
             "triggered": self.state,
             "active_for": 0 if not self.state else time.time() - self._last_rising,
             "last_active": self._last_rising,
