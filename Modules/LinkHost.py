@@ -97,7 +97,7 @@ class LinkHost(RoomModule):
 
     def fire_event(self, room_object, event_name, *args, **kwargs):
         logging.info(f"Firing event {event_name} for {room_object.object_name}")
-        asyncio.create_task(self.send_event(room_object, event_name, *args, **kwargs))
+        asyncio.get_event_loop().create_task(self.send_event(room_object, event_name, *args, **kwargs))
 
     async def send_event(self, room_object, event_name, *args, **kwargs):
         try:
