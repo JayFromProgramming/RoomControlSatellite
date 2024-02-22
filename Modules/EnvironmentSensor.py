@@ -62,7 +62,7 @@ class SensorValue(RoomObject):
     def get_name(self):
         return self.name
 
-    def set_value(self, value):
+    def roll_average(self, value):
 
         if len(self.roll_avg_values) >= 3:
             # Cap the incoming value to no more than 2 units above/below the current value (to prevent spikes)
@@ -76,6 +76,8 @@ class SensorValue(RoomObject):
             self.value = sum(self.roll_avg_values) / len(self.roll_avg_values)  # type: float
         else:
             self.value = value
+
+        super().set_value("current_value", self.value)
 
     def set_fault(self, fault, reason="Unknown"):
         # logging.warning(f"SensorValu/e ({self.name}): Setting fault to {fault}")
@@ -125,7 +127,7 @@ class Sensor:
         return self.values.values()
 
     def get_value(self, name):
-        return self.values[name].get_value()
+        return self.values[name].get_value("current_value")
 
     def get_last_updated(self):
         return self.last_updated
@@ -193,8 +195,8 @@ class EnvironmentSensor(Sensor):
                         self.set_fault(True, "Sensor returned None")
 
                     else:
-                        self.values["temperature"].set_value(convert_cel_to_fahr(temperature))
-                        self.values["humidity"].set_value(round(humidity, 2))
+                        self.values["temperature"].roll_average(convert_cel_to_fahr(temperature))
+                        self.values["humidity"].roll_average(round(humidity, 2))
                         self.last_updated = datetime.datetime.now()
                         # logging.info(f"EnvironmentSensor ({self.name}): Sensor read successful")
                         self.fault = False
