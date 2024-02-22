@@ -25,6 +25,9 @@ class PinWatcherHost(RoomModule):
                                                 watcher["debounce"],
                                                 watcher["normallyOpen"]))
 
+        for watcher in self.pin_watchers:
+            self.room_controller.attach_object(watcher)
+
 
 class PinWatcher(RoomObject):
     is_promise = False
