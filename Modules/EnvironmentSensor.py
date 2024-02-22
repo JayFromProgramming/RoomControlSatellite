@@ -53,7 +53,7 @@ class SensorValue(RoomObject):
         self._fault = True  # type: bool
         self._reason = "Unknown"  # type: str
 
-        super().set_value("value", None)
+        super().set_value("current_value", None)
         super().set_value("unit", self.unit)
 
     def get_unit(self):

@@ -7,6 +7,7 @@ from Modules.RoomObject import RoomObject
 
 try:
     import RPi.GPIO as GPIO
+    GPIO.setmode(GPIO.BOARD)
 except ImportError:
     GPIO = None
     logging.warning("RPi.GPIO not found, GPIO will not be available")
