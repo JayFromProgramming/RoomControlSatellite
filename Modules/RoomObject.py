@@ -53,8 +53,9 @@ class RoomObject:
         return self._values[key]
 
     def set_value(self, key, value):
+        if self._values.get(key, None) != value:
+            self.emit_event(f"on_{key}_update", value)
         self._values[key] = value
-        self.emit_event(f"on_{key}_update", value)
 
     def attach_event_callback(self, callback, event_name):
         """
