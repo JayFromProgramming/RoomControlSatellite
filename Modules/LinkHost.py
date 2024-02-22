@@ -49,6 +49,7 @@ class LinkHost(RoomModule):
         self.webserver_port = 47670
 
         self.runner = web.AppRunner(self.app)
+        self.loop = asyncio.get_event_loop()
 
         asyncio.create_task(self.main())
 
@@ -97,7 +98,7 @@ class LinkHost(RoomModule):
 
     def fire_event(self, room_object, event_name, *args, **kwargs):
         logging.info(f"Firing event {event_name} for {room_object.object_name}")
-        asyncio.get_event_loop().create_task(self.send_event(room_object, event_name, *args, **kwargs))
+        self.loop.create_task(self.send_event(room_object, event_name, *args, **kwargs))
 
     async def send_event(self, room_object, event_name, *args, **kwargs):
         try:
