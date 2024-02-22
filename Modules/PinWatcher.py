@@ -1,7 +1,9 @@
+import json
 import time
 
 from loguru import logger as logging
 from Modules.RoomModule import RoomModule
+from Modules.RoomObject import RoomObject
 
 try:
     import RPi.GPIO as GPIO
@@ -10,12 +12,25 @@ except ImportError:
     logging.warning("RPi.GPIO not found, GPIO will not be available")
 
 
+class PinWatcherHost(RoomModule):
+
+    def __init__(self, room_controller):
+        super().__init__(room_controller)
+        self.pin_watchers = []
+        self.watcher_configs = json.load(open("Configs/PinWatchers.json"))
+        # self.database = room_controller.database
+
+        for watcher in self.watcher_configs:
+            self.pin_watchers.append(PinWatcher(watcher["name"], watcher["pin"], watcher["edge"],
+                                                watcher["debounce"],
+                                                watcher["normallyOpen"]))
+
+
 class PinWatcher(RoomObject):
     is_promise = False
     is_sensor_only = True
 
-    def __init__(self, name, pin, callback: callable, edge=None, bouncetime=200, normally_open=True,
-                 enabled=True, database=None):
+    def __init__(self, name, pin, edge=None, bouncetime=200, normally_open=True):
         super().__init__(name, "PinWatcher")
         self.online = True
         self.fault = False
@@ -23,16 +38,13 @@ class PinWatcher(RoomObject):
         self.pin = pin  # Pin number
         self.state = None  # None = Unknown, True = On, False = Off
         self._name = name  # Name of the device
-        self.enabled = enabled  # Is the device enabled for detection
 
         self._last_rising = 0  # Last time the device was triggered
         self._last_falling = 0  # Last time the device was triggered
 
-        self.callback = callback
         self.edge = None
         self.bouncetime = bouncetime
         self.normal_open = normally_open
-        self.database = database
 
         if GPIO is None:
             self.fault = True
@@ -60,7 +72,7 @@ class PinWatcher(RoomObject):
             self._last_falling = time.time()
 
         logging.debug(f"PinWatcher ({self.name()}): Pin {pin} changed state to {self.state}")
-        self.callback(pin)
+        super().emit_event("state_change", self.get_state())
         # Setup new event detect
         GPIO.remove_event_detect(self.pin)
         GPIO.add_event_detect(self.pin, self.edge, callback=self._callback, bouncetime=self.bouncetime)
@@ -93,15 +105,3 @@ class PinWatcher(RoomObject):
             "fault": self.fault,
             "reason": self.fault_message
         }
-
-    def auto_state(self):
-        return False
-
-    @property
-    def on(self):
-        return self.enabled
-
-    @on.setter
-    def on(self, value):
-        self.database.run("UPDATE occupancy_sources SET enabled = ? WHERE name = ?", (value, self.name()), commit=True)
-        self.enabled = value

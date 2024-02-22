@@ -1,0 +1,9 @@
+[
+  {
+    "name": "MotionDetector",
+    "pin": 11,
+    "edge": false,
+    "debounce": 200,
+    "normallyOpen": true
+  }
+]
