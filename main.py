@@ -81,6 +81,7 @@ class SatelliteController:
                 logging.info(f"Replacing promise object {room_object.object_name} with real object")
                 # Make sure that we copy the callbacks from the promise object to the real object
                 device._callbacks = room_object._callbacks
+                device._network_hook = room_object._network_hook
                 self.room_objects[i].reference = device  # Replace the promise object with the real object
                 return
         logging.info(f"Attaching object {device.object_name} to room controller")

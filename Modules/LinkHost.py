@@ -79,6 +79,8 @@ class LinkHost(RoomModule):
         logging.info("Starting uplink loop")
         while True:
             try:
+                for room_object in self.room_controller.get_all_objects():
+                    room_object._network_hook = self.fire_event
                 logging.info("Sending uplink")
                 print(self.generate_payload())
                 async with self.session.post(f"http://{self.host_address}:47670/uplink",
@@ -114,7 +116,6 @@ class LinkHost(RoomModule):
         except Exception as e:
             logging.error(f"Error sending event: {e}")
             logging.exception(e)
-
 
     async def downlink(self, request):
         data = await request.json()
