@@ -38,7 +38,8 @@ class LinkHost(RoomModule):
         super().__init__(room_controller)
         self.app = web.Application()
         self.app.add_routes([web.post('/downlink', self.downlink),
-                             web.get('/uplink', self.uplink)])
+                             web.get('/uplink', self.uplink),
+                             web.post('/event', self.event)])
 
         self.room_modules = []
         self.room_objects = []
@@ -126,3 +127,22 @@ class LinkHost(RoomModule):
     async def uplink(self, request):
         logging.info("Received uplink request")
         return web.json_response(self.generate_payload())
+
+    async def event(self, request):
+        try:
+            data = await request.json()
+            logging.info(f"Received event: {data}")
+            object_name = data["object"]
+            event_name = data["event"]
+            args = data["args"]
+            kwargs = data["kwargs"]
+            room_object = self.room_controller.get_object(object_name, create_if_not_found=False)
+            if room_object:
+                room_object.emit_event(event_name, *args, **kwargs)
+                return web.Response(text="OK", status=200)
+            else:
+                return web.Response(text="Object not found", status=401)
+        except Exception as e:
+            logging.error(f"Error processing event: {e}")
+            logging.exception(e)
+            return web.Response(text="Error processing event", status=500)
