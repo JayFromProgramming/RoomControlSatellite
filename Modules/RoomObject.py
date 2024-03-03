@@ -84,6 +84,14 @@ class RoomObject:
             except Exception as e:
                 logging.error(f"Error in network hook for event {event_name}: {e}")
 
+    def remote_event(self, event_name, *args, **kwargs):
+        for callback, name in self._callbacks:
+            if name == event_name:
+                try:
+                    callback(*args, **kwargs)
+                except Exception as e:
+                    logging.error(f"Error in callback {callback} for event {event_name}: {e}")
+
     def network_event_hook(self, callback):
         """
         Attach a callback to the network event hook

@@ -138,7 +138,7 @@ class LinkHost(RoomModule):
             kwargs = data["kwargs"]
             room_object = self.room_controller.get_object(object_name, create_if_not_found=False)
             if room_object:
-                room_object.emit_event(event_name, *args, **kwargs)
+                room_object.remote_event(event_name, *args, **kwargs)
                 return web.Response(text="OK", status=200)
             else:
                 return web.Response(text="Object not found", status=401)
