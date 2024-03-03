@@ -86,7 +86,7 @@ class RoomObject:
                 logging.error(f"Error in network hook for event {event_name}: {e}")
 
     def remote_event(self, event_name, *args, **kwargs):
-        for callback, name in self._callbacks:
+        for name, callback in self._callbacks:
             if name == event_name:
                 logging.info(f"Found callback for event {event_name} on {self.object_name}")
                 try:
