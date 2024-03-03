@@ -48,6 +48,10 @@ class SystemMonitorLocal(RoomObject):
         self.latest = None
         self.check_version()
         self.start_monitoring()
+        self.attach_event_callback("reboot", self.reboot)
+        self.attach_event_callback("shutdown", self.shutdown)
+        self.attach_event_callback("update", self.update_system)
+        self.attach_event_callback("restart", self.restart)
         self.room_controller.attach_object(self)
 
     def get_state(self):
@@ -134,3 +138,17 @@ class SystemMonitorLocal(RoomObject):
                 logging.exception(e)
             finally:
                 time.sleep(5)
+
+    def reboot(self):
+        os.system("sudo reboot now")
+
+    def shutdown(self):
+        os.system("sudo shutdown now")
+
+    def update_system(self):
+        os.system("git pull")
+        time.sleep(5)
+        exit(-1)
+
+    def restart(self):
+        exit(-1)
