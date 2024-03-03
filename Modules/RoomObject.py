@@ -63,6 +63,7 @@ class RoomObject:
         :param callback: The callback function to call
         :param event_name: The name of the event to attach to (e.g. "on_motion")
         """
+        logging.info(f"Attaching callback {callback} to event {event_name} on {self.object_name}")
         self._callbacks.append((callback, event_name))
 
     def emit_event(self, event_name, *args, **kwargs):
