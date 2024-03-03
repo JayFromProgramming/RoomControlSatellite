@@ -18,7 +18,6 @@ class SystemMonitor(RoomModule):
     def __init__(self, room_controller):
         RoomModule.__init__(self, room_controller)
         self.room_controller = room_controller
-        self.database = room_controller.database
         self.system_status = None
         self.monitors = []
         self.monitors.append(SystemMonitorLocal(room_controller))
