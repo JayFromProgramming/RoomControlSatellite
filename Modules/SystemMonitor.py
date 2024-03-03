@@ -120,14 +120,14 @@ class SystemMonitorLocal(RoomObject):
                 network_usage = psutil.net_io_counters().bytes_sent - self.last_network_usage
                 self.last_network_usage = psutil.net_io_counters().bytes_sent
 
-                self.set_value("cpu_usage", cpu_usage)
-                self.set_value("memory_usage", memory_usage)
-                self.set_value("disk_usage", disk_usage)
-                self.set_value("network_usage", network_usage)
-                self.set_value("temperature", cpu_temp)
-                self.set_value("uptime_system", round(time.time() - psutil.boot_time()))
-                self.set_value("uptime_controller", round(time.time() - os.path.getmtime("main.py")))
-                self.set_value("address", self.get_ip())
+                self.set_value("cpu_usage", cpu_usage, block_event=True)
+                self.set_value("memory_usage", memory_usage, block_event=True)
+                self.set_value("disk_usage", disk_usage, block_event=True)
+                self.set_value("network_usage", network_usage, block_event=True)
+                self.set_value("temperature", cpu_temp, block_event=True)
+                self.set_value("uptime_system", round(time.time() - psutil.boot_time()), block_event=True)
+                self.set_value("uptime_controller", round(time.time() - os.path.getmtime("main.py")), block_event=True)
+                self.set_value("address", self.get_ip(), block_event=True)
 
             except Exception as e:
                 logging.error(f"Error: {e}")
