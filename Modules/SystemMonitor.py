@@ -31,7 +31,7 @@ class SystemMonitorLocal(RoomObject):
     def __init__(self, room_controller):
         # Get Hostname
         hostname = socket.gethostname()
-        super().__init__(f"SystemMonitor-{hostname}",
+        super().__init__(f"RemoteMonitor-{hostname}",
                          "SystemMonitor")
         self.room_controller = room_controller
         self.set_value("name", "Master Controller")
