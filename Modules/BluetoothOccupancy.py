@@ -39,7 +39,7 @@ class BlueStalker(RoomObject):
 
     def __init__(self, database: sqlite3.Connection, high_frequency_scan_enabled: bool = False):
         # Target file is a json file that contains bluetooth addresses, name, and role
-        super().__init__("BlueStalker", "BlueStalker")
+        super().__init__("BlueStalker2", "BlueStalker")
         self.database = database
         self.init_database()
 
@@ -57,6 +57,25 @@ class BlueStalker(RoomObject):
         self.reboot_timer = None
 
         self.route_lost = False
+
+        self.set_value("occupants", [])
+        self.set_value("targets", self.get_targets())
+        self.set_value("occupied", None)
+        self.set_value("high_frequency_scan_enabled", self.high_frequency_scan_enabled)
+        self.occupancy_data = {}
+        self.target_mac_addresses = []
+        if os.path.exists("Configs/BlueStalker.json"):
+            with open("Configs/BlueStalker.json", "r") as file:
+                config = json.load(file)
+                self.occupancy_data = config
+                for target in config.keys():
+                    self.target_mac_addresses.append(target)
+                logging.info(f"BlueStalker: Loaded {len(self.target_mac_addresses)} targets")
+        else:
+            logging.error("BlueStalker: Config file not found")
+            # Make a default config file
+            with open("Configs/BlueStalker.json", "w") as file:
+                json.dump({}, file)
 
         if bluetooth is None or bluetoothLE is None:
             self.reboot_locked_out = True
@@ -107,31 +126,6 @@ class BlueStalker(RoomObject):
     #                 # os.system("sudo shutdown -r +1")
     #                 return
 
-    # def init_database(self):
-    #     cursor = self.database.cursor()
-    #     cursor.execute("CREATE TABLE IF NOT EXISTS bluetooth_targets"
-    #                    " (uuid integer constraint table_name_pk primary key "
-    #                    "autoincrement, address TEXT UNIQUE, name TEXT, role TEXT)")
-    #     cursor.execute(
-    #         "CREATE TABLE IF NOT EXISTS bluetooth_occupancy (uuid INTEGER UNIQUE, in_room BOOLEAN, last_changed INTEGER)")
-    #     cursor.close()
-    #
-    # def add_target(self, address: str, name: str, role: str):
-    #     cursor = self.database.cursor()
-    #     # Make sure the target is not already in the database
-    #     cursor.execute("SELECT * FROM bluetooth_targets WHERE address=?", (address,))
-    #     if cursor.fetchone() is None:
-    #         cursor.execute("INSERT INTO bluetooth_targets (address, name, role) VALUES (?, ?, ?)",
-    #                        (address, name, role))
-    #         self.database.commit()
-    #         logging.info(f"Added {name} to the target list")
-    #     else:
-    #         cursor.execute("UPDATE bluetooth_targets SET name=?, role=? WHERE address=?",
-    #                        (name, role, address))
-    #         self.database.commit()
-    #         logging.warning(f"Target [{name}] already exists in database, updating instead")
-    #     cursor.close()
-
     def should_scan(self):
         """Called externally to tell that it is time to scan"""
         if not self.enabled:
@@ -156,11 +150,9 @@ class BlueStalker(RoomObject):
         # if not self.heartbeat_alive and heartbeat_was_alive:
         #     logging.error("BlueStalker: Heartbeat device lost, delaying next scan")
         #     return
-
-        targets = self.database.cursor().execute("SELECT * FROM bluetooth_targets").fetchall()
-        for target in targets:
-            if conn := self.sockets.get(target[1]):  # If the socket is already open
-                self.conn_is_alive(conn, target[1])  # Check if the connection is still alive
+        for target in self.target_mac_addresses:
+            if conn := self.sockets.get(target):  # If the socket is already open
+                self.conn_is_alive(conn, target)  # Check if the connection is still alive
 
         self.last_checkup = datetime.datetime.now().timestamp()
 
@@ -174,10 +166,9 @@ class BlueStalker(RoomObject):
 
         self.scanning = True
         conn_threads = []
-        targets = self.database.cursor().execute("SELECT * FROM bluetooth_targets").fetchall()
-        for target in targets:
-            if self.sockets.get(target[1]) is None:  # If the socket is already open
-                conn_threads.append(self.connect(target[1]))  # Else attempt to connect to the device
+        for target in self.target_mac_addresses:
+            if self.sockets.get(target) is None:  # If the socket is already open
+                conn_threads.append(self.connect(target))  # Else attempt to connect to the device
 
         for thread in conn_threads:
             thread.join()
@@ -304,142 +295,6 @@ class BlueStalker(RoomObject):
 
     def update_occupancy(self, address, in_room):
         # Get the UUID of the mac address
-        cursor = self.database.cursor()
-        cursor.execute("SELECT uuid FROM bluetooth_targets WHERE address=?", (address,))
-        uuid = cursor.fetchone()[0]
-        cursor.close()
-        if uuid == 0:
-            logging.error(f"Failed to get UUID for {address}")
-            return
         # Check if an occupancy entry exists for the address
-        self.database.lock.acquire()
-        cursor = self.database.cursor()
-        cursor.execute("SELECT * FROM bluetooth_occupancy WHERE uuid=?", (uuid,))
-        if cursor.fetchone() is None:
-            # Check if the db state matches in_room, if it is, we don't need to update the database
-            cursor.execute("INSERT INTO bluetooth_occupancy (uuid, in_room, last_changed) VALUES (?, ?, ?)",
-                           (uuid, in_room, datetime.datetime.now().timestamp()))
-
-            self.database.commit()
-            self.database.lock.release()
-        else:
-            cursor.execute("UPDATE bluetooth_occupancy SET in_room=?, last_changed=? WHERE uuid=?",
-                           (in_room, datetime.datetime.now().timestamp(), uuid))
-            self.database.commit()
-            self.database.lock.release()
-
-    def get_occupancy(self):
-        cursor = self.database.cursor()
-        cursor.execute("SELECT * FROM bluetooth_occupancy")
-        occupancy = cursor.fetchall()
-        cursor.close()
-        # Get the names of the devices combine this with the occupancy
-        cursor = self.database.cursor()
-        cursor.execute("SELECT * FROM bluetooth_targets")
-        targets = cursor.fetchall()
-        cursor.close()
-
-        occupancy_info = {}
-        for target in targets:
-            for device in occupancy:
-                if target[0] == device[0]:
-                    present = True if device[1] == 1 else False
-                    occupancy_info[target[2]] = {"present": present, "last_changed": device[2], "uuid": target[0]}
-
-        return occupancy_info
-
-    def get_occupants_names(self):
-        """Gets current occupants and only returns their names"""
-        occupants = self.get_occupancy()
-        occupants_names = []
-        for occupant in occupants:
-            if occupants[occupant]["present"]:
-                occupants_names.append(occupant)
-        return occupants_names
-
-    def is_occupied(self):
-        cursor = self.database.cursor()
-        cursor.execute("SELECT * FROM bluetooth_occupancy")
-        occupancy = cursor.fetchall()
-        cursor.close()
-        if not self.enabled:
-            return False
-        for device in occupancy:
-            if device[1] == 1:
-                return True
-        return False
-
-    def get_combined_target_info(self, uuid):
-
-        cursor = self.database.cursor()
-        cursor.execute("SELECT * FROM bluetooth_occupancy WHERE uuid=?", (uuid,))
-        device = cursor.fetchone()
-        cursor.close()
-        # Get the names of the devices combine this with the occupancy
-        cursor = self.database.cursor()
-        cursor.execute("SELECT * FROM bluetooth_targets WHERE uuid=?", (uuid,))
-        target = cursor.fetchone()
-        cursor.close()
-
-        present = True if device[1] == 1 else False
-        return {"present": present, "last_changed": device[2], "uuid": target[0]}
-
-    def is_here(self, uuid):
-        cursor = self.database.cursor()
-        cursor.execute("SELECT * FROM bluetooth_occupancy WHERE uuid=?", (uuid,))
-        device = cursor.fetchone()
-        if device is None:
-            return None
-        cursor.close()
-        if not self.enabled:
-            return False
-        return True if device[1] == 1 else False
-
-    def get_name(self, uuid):
-        cursor = self.database.cursor()
-        cursor.execute("SELECT * FROM bluetooth_targets WHERE uuid=?", (uuid,))
-        device = cursor.fetchone()
-        if device is None:
-            return None
-        cursor.close()
-        return device[2]
-
-    ### API Methods ###
-
-    @property
-    def on(self):
-        return self.enabled
-
-    @on.setter
-    def on(self, value):
-        self.enabled = value
-
-    def name(self):
-        return "blue_stalker"
-
-    def get_state(self):
-        return {
-            "on": self.enabled,
-            "high_frequency_scan": self.high_frequency_scan_enabled,
-            "occupied": self.is_occupied(),
-            "occupants": self.get_occupants_names()
-        }
-
-    def get_info(self):
-        return {
-            "last_scan": self.last_scan,
-            "last_check": self.last_checkup
-        }
-
-    def get_health(self):
-        return {
-            "online": self.online,
-            "fault": self.fault,
-            "reason": self.fault_message
-        }
-
-    def get_type(self):
-        return "blue_stalker"
-
-    def auto_state(self):
-        return False
+        self.occupancy_data[address]["present"] = in_room
+        self.set_value("occupants", [{mac: data["name"]} for mac, data in self.occupancy_data.items()])
