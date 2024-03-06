@@ -29,9 +29,9 @@ class BluetoothDetector(RoomModule):
     def __init__(self, room_controller):
         super().__init__(room_controller)
         self.room_controller = room_controller
-        # blue_stalker = BlueStalker(self.room_controller.database)
+        blue_stalker = BlueStalker(self.room_controller.database)
 
-        # self.room_controller.attach_object(blue_stalker)
+        self.room_controller.attach_object(blue_stalker)
 
 
 class BlueStalker(RoomObject):
