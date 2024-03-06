@@ -296,3 +296,10 @@ class BlueStalker(RoomObject):
         # Check if an occupancy entry exists for the address
         self.occupancy_data[address]["present"] = in_room
         self.set_value("occupants", [{mac: data["name"]} for mac, data in self.occupancy_data.items()])
+
+    def get_health(self):
+        return {
+            "online": self.online,
+            "fault": self.fault,
+            "reason": self.fault_message
+        }
