@@ -310,6 +310,7 @@ class BlueStalker(RoomObject):
                 "address": address
             } for uuid, data in self.occupancy_data.items() if data["present"] is True
         })
+        self.set_value("occupied", len([data for data in self.occupancy_data.values() if data["present"] is True]) > 0)
 
     def get_health(self):
         return {
