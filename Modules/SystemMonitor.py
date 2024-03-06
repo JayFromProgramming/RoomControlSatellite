@@ -44,7 +44,7 @@ class SystemMonitorLocal(RoomObject):
         self.set_value("temperature", 0)
         self.set_value("update_available", None)
         self.set_value("uptime_system", round(time.time() - psutil.boot_time()))
-        self.set_value("uptime_controller", round(time.time() - os.path.getmtime("main.py")))
+        self.set_value("uptime_controller", round(time.time() - psutil.Process().create_time()))
         self.latest = None
         self.check_version()
         self.start_monitoring()
@@ -130,7 +130,8 @@ class SystemMonitorLocal(RoomObject):
                 self.set_value("network_usage", network_usage, block_event=True)
                 self.set_value("temperature", cpu_temp, block_event=True)
                 self.set_value("uptime_system", round(time.time() - psutil.boot_time()), block_event=True)
-                self.set_value("uptime_controller", round(time.time() - os.path.getmtime("main.py")), block_event=True)
+                self.set_value("uptime_controller", round(time.time() - psutil.Process().create_time()),
+                               block_event=True)
                 self.set_value("address", self.get_ip(), block_event=True)
 
             except Exception as e:
