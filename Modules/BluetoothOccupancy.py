@@ -294,10 +294,10 @@ class BlueStalker(RoomObject):
 
     def get_targets(self):
         return {
-            uuid: {
+            data["uuid"]: {
                 "name": data["name"],
-                "address": data["address"],
-            } for uuid, data in self.occupancy_data.items()
+                "address": address
+            } for address, data in self.occupancy_data.items()
         }
 
     def update_occupancy(self, address, in_room):
@@ -305,9 +305,9 @@ class BlueStalker(RoomObject):
         # Check if an occupancy entry exists for the address
         self.occupancy_data[address]["present"] = in_room
         self.set_value("occupants", {
-            uuid: {
+            data["uuid"]: {
                 "name": data["name"],
-                "address": data["address"],
+                "address": address
             } for uuid, data in self.occupancy_data.items() if data["present"] is True
         })
 
