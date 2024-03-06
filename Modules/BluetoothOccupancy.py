@@ -56,10 +56,6 @@ class BlueStalker(RoomObject):
 
         self.route_lost = False
 
-        self.set_value("occupants", [])
-        self.set_value("targets", self.get_targets())
-        self.set_value("occupied", None)
-        self.set_value("high_frequency_scan_enabled", self.high_frequency_scan_enabled)
         self.occupancy_data = {}
         self.target_mac_addresses = []
         if os.path.exists("Configs/BlueStalker.json"):
@@ -74,6 +70,11 @@ class BlueStalker(RoomObject):
             # Make a default config file
             with open("Configs/BlueStalker.json", "w") as file:
                 json.dump({}, file)
+
+        self.set_value("occupants", [])
+        self.set_value("targets", self.get_targets())
+        self.set_value("occupied", None)
+        self.set_value("high_frequency_scan_enabled", self.high_frequency_scan_enabled)
 
         if bluetooth is None or bluetoothLE is None:
             self.reboot_locked_out = True
