@@ -29,7 +29,7 @@ class BluetoothDetector(RoomModule):
     def __init__(self, room_controller):
         super().__init__(room_controller)
         self.room_controller = room_controller
-        blue_stalker = BlueStalker(self.room_controller.database)
+        blue_stalker = BlueStalker()
 
         self.room_controller.attach_object(blue_stalker)
 
@@ -37,11 +37,9 @@ class BluetoothDetector(RoomModule):
 class BlueStalker(RoomObject):
     object_type = "BlueStalker"
 
-    def __init__(self, database: sqlite3.Connection, high_frequency_scan_enabled: bool = False):
+    def __init__(self, high_frequency_scan_enabled: bool = False):
         # Target file is a json file that contains bluetooth addresses, name, and role
         super().__init__("BlueStalker2", "BlueStalker")
-        self.database = database
-        self.init_database()
 
         self.sockets = {}
         self.high_frequency_scan_enabled = high_frequency_scan_enabled
