@@ -291,11 +291,24 @@ class BlueStalker(RoomObject):
             # logging.info(f"Connection to {address} is alive")
             self.update_occupancy(address, True)
 
+    def get_targets(self):
+        return {
+            uuid: {
+                "name": data["name"],
+                "address": data["address"],
+            } for uuid, data in self.occupancy_data.items()
+        }
+
     def update_occupancy(self, address, in_room):
         # Get the UUID of the mac address
         # Check if an occupancy entry exists for the address
         self.occupancy_data[address]["present"] = in_room
-        self.set_value("occupants", [{mac: data["name"]} for mac, data in self.occupancy_data.items()])
+        self.set_value("occupants", {
+            uuid: {
+                "name": data["name"],
+                "address": data["address"],
+            } for uuid, data in self.occupancy_data.items() if data["present"] is True
+        })
 
     def get_health(self):
         return {

@@ -17,7 +17,6 @@ class RoomObject:
         self._values = {}
         self._health = {}
 
-
     def name(self):
         return self.object_name or self.object_type
 
