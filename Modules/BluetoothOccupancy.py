@@ -5,6 +5,7 @@ import sqlite3
 import sys
 import time
 
+import psutil
 from loguru import logger as logging
 
 from Modules.Decorators import background
@@ -70,7 +71,7 @@ class BlueStalker(RoomObject):
             # Make a default config file
             with open("Configs/BlueStalker.json", "w") as file:
                 json.dump({}, file)
-
+        self.set_value("on", True)
         self.set_value("occupants", [])
         self.set_value("targets", self.get_targets())
         self.set_value("occupied", None)
@@ -79,8 +80,8 @@ class BlueStalker(RoomObject):
         if bluetooth is None or bluetoothLE is None:
             self.reboot_locked_out = True
 
-        # self.heartbeat_device = "38:1D:D9:F7:6D:44"
-        # self.heartbeat_alive = False  # If the heartbeat device is alive
+        self.heartbeat_device = "D8:3A:DD:6B:59:72"
+        self.heartbeat_alive = False  # If the heartbeat device is alive
 
         if bluetooth is not None:
             self.online = True
@@ -93,37 +94,37 @@ class BlueStalker(RoomObject):
 
         self.refresh()
 
-    # def auto_reboot_check(self):
-    #     if sys.platform != "linux":
-    #         return
-    #     # Called only when the bluetooth detector is not functioning
-    #     psutil_uptime = time.time() - psutil.boot_time()
-    #     # If the pi has been up for less than 5 minutes but not more than 10 minutes
-    #     # Then we don't trigger a reboot_lockout because it is likely that initialization is still happening
-    #     if 300 > psutil_uptime > 600:
-    #         return
-    #     elif 600 > psutil_uptime > 3600:
-    #         # If the pi has not been up for more than 1 hour and bluetooth is still not working then
-    #         # is not likely to fix the problem, and we should not reboot to avoid a reboot loop
-    #         self.reboot_locked_out = True
-    #         logging.warning("BlueStalker: Failed startup precheck, auto reboot locked out")
-    #         return
-    #     elif psutil_uptime > 3600:
-    #         # If bluetooth was working and then stopped working after 1 hour then we should reboot
-    #         # to try and fix the problem
-    #         if self.reboot_locked_out:
-    #             return
-    #         elif self.reboot_timer is None:
-    #             logging.warning("BlueStalker: Bluetooth failed, rebooting in 5 minutes")
-    #             self.reboot_timer = datetime.datetime.now().timestamp() + 300
-    #         else:
-    #             # Check if the reboot timer has expired
-    #             if self.reboot_timer < datetime.datetime.now().timestamp():
-    #                 logging.warning("BlueStalker: Rebooting")
-    #                 # Run the reboot command with a 1 minute delay to allow the log to be written
-    #                 self.reboot_locked_out = True
-    #                 # os.system("sudo shutdown -r +1")
-    #                 return
+    def auto_reboot_check(self):
+        if sys.platform != "linux":
+            return
+        # Called only when the bluetooth detector is not functioning
+        psutil_uptime = time.time() - psutil.boot_time()
+        # If the pi has been up for less than 5 minutes but not more than 10 minutes
+        # Then we don't trigger a reboot_lockout because it is likely that initialization is still happening
+        if 300 > psutil_uptime > 600:
+            return
+        elif 600 > psutil_uptime > 3600:
+            # If the pi has not been up for more than 1 hour and bluetooth is still not working then
+            # is not likely to fix the problem, and we should not reboot to avoid a reboot loop
+            self.reboot_locked_out = True
+            logging.warning("BlueStalker: Failed startup precheck, auto reboot locked out")
+            return
+        elif psutil_uptime > 3600:
+            # If bluetooth was working and then stopped working after 1 hour then we should reboot
+            # to try and fix the problem
+            if self.reboot_locked_out:
+                return
+            elif self.reboot_timer is None:
+                logging.warning("BlueStalker: Bluetooth failed, rebooting in 5 minutes")
+                self.reboot_timer = datetime.datetime.now().timestamp() + 300
+            else:
+                # Check if the reboot timer has expired
+                if self.reboot_timer < datetime.datetime.now().timestamp():
+                    logging.warning("BlueStalker: Rebooting")
+                    # Run the reboot command with a 1 minute delay to allow the log to be written
+                    self.reboot_locked_out = True
+                    os.system("sudo shutdown -r +1")
+                    return
 
     def should_scan(self):
         """Called externally to tell that it is time to scan"""
@@ -146,9 +147,19 @@ class BlueStalker(RoomObject):
             return
         logging.debug("BlueStalker: Starting Life Check")
 
-        # if not self.heartbeat_alive and heartbeat_was_alive:
-        #     logging.error("BlueStalker: Heartbeat device lost, delaying next scan")
-        #     return
+        heartbeat_was_alive = self.heartbeat_alive
+        try:
+            # Check if the heartbeat device is still connected
+            if self.heartbeat_alive:
+                self.conn_is_alive(self.sockets[self.heartbeat_device], self.heartbeat_device, is_heartbeat=True)
+            else:
+                self.connect(self.heartbeat_device, is_heartbeat=True)
+        except Exception as e:
+            logging.error(f"BlueStalker: Error checking heartbeat device: {e}")
+
+        if not self.heartbeat_alive and heartbeat_was_alive:
+            logging.error("BlueStalker: Heartbeat device lost, delaying next scan")
+            return
         for target in self.target_mac_addresses:
             if conn := self.sockets.get(target):  # If the socket is already open
                 self.conn_is_alive(conn, target)  # Check if the connection is still alive
@@ -175,31 +186,31 @@ class BlueStalker(RoomObject):
         self.last_scan = datetime.datetime.now().timestamp()  # Update the last update time
 
     def determine_health(self):
-        if self.route_lost:
-            self.online = False
-            self.fault = True
-            self.fault_message = "Bluetooth Adapter Offline"
-            return
+        # if self.route_lost:
+        #     self.online = False
+        #     self.fault = True
+        #     self.fault_message = "Bluetooth Adapter Offline"
+        #     return
 
-        # if self.heartbeat_alive:
-        #     self.online = True
-        #     self.fault = False
-        #     self.fault_message = ""
-        # else:
-        #     # If the heartbeat device is not alive and there are no other devices connected
-        #     # Then the bluetooth detector is offline
-        #     if len(self.sockets) == 0:
-        #         self.fault = True
-        #         self.online = False
-        #         if self.reboot_locked_out:
-        #             self.fault_message = "Radio Failure"
-        #         else:
-        #             self.fault_message = "Radio Unresponsive"
-        #         self.auto_reboot_check()
-        #     else:
-        #         self.fault = True
-        #         self.online = True
-        #         self.fault_message = "No Heartbeat"
+        if self.heartbeat_alive:
+            self.online = True
+            self.fault = False
+            self.fault_message = ""
+        else:
+            # If the heartbeat device is not alive and there are no other devices connected
+            # Then the bluetooth detector is offline
+            if len(self.sockets) == 0:
+                self.fault = True
+                self.online = False
+                if self.reboot_locked_out:
+                    self.fault_message = "Radio Failure"
+                else:
+                    self.fault_message = "Radio Unresponsive"
+                self.auto_reboot_check()
+            else:
+                self.fault = True
+                self.online = True
+                self.fault_message = "No Heartbeat"
 
     @background
     def refresh(self):
@@ -232,7 +243,7 @@ class BlueStalker(RoomObject):
         self.fault_message = "Refresh loop exited"
 
     @background
-    def connect(self, address):
+    def connect(self, address, is_heartbeat=False):
         if bluetooth is None:
             self.fault = True
             self.fault_message = "Bluetooth not available"
@@ -246,11 +257,17 @@ class BlueStalker(RoomObject):
             if e.__str__() == "[Errno 111] Connection refused":  # Connection refused still counts as a connection as
                 # the device had to be in range to refuse the connection
                 logging.error(f"BlueStalker: Connection to address {address} refused, device is in range")
-                self.update_occupancy(address, True)
+                if not is_heartbeat:
+                    self.update_occupancy(address, True)
+                else:
+                    self.heartbeat_alive = True
                 return
             elif e.__str__() == "[Errno 115] Operation now in progress":  # This is the error we expect to see
                 logging.debug(f"BlueStalker: Connection to {address} is in progress")
-                self.update_occupancy(address, False)
+                if not is_heartbeat:
+                    self.update_occupancy(address, False)
+                else:
+                    self.heartbeat_alive = False
                 self.sockets[address] = sock  # Add the socket to the list of sockets
                 time.sleep(2.5)  # Wait for the connection to complete
                 self.conn_is_alive(sock, address)  # Check if the connection is still alive
@@ -262,17 +279,26 @@ class BlueStalker(RoomObject):
                 return
             else:  # Any other error is unexpected
                 logging.error(f"BlueStalker: Connection to address {address} failed with error {e}")
-                self.update_occupancy(address, False)
+                if not is_heartbeat:
+                    self.update_occupancy(address, False)
+                else:
+                    self.heartbeat_alive = False
                 return
         except OSError as e:  # Any additional errors that the OS throws are caught here
             logging.error(f"BlueStalker: Failed to connect to {address} with error {e}")
-            self.update_occupancy(address, False)
+            if not is_heartbeat:
+                self.update_occupancy(address, False)
+            else:
+                self.heartbeat_alive = False
             return
         else:
             logging.debug(f"BlueStalker: Connected to {address}")
             self.sockets[address] = sock
             self.route_lost = False
-            self.update_occupancy(address, True)
+            if not is_heartbeat:
+                self.update_occupancy(address, True)
+            else:
+                self.heartbeat_alive = True
 
     @background
     def conn_is_alive(self, connection, address):
@@ -294,7 +320,7 @@ class BlueStalker(RoomObject):
 
     def get_targets(self):
         return {
-            data["uuid"]: {
+            int(data["uuid"]): {
                 "name": data["name"],
                 "address": address
             } for address, data in self.occupancy_data.items()
@@ -305,7 +331,7 @@ class BlueStalker(RoomObject):
         # Check if an occupancy entry exists for the address
         self.occupancy_data[address]["present"] = in_room
         self.set_value("occupants", {
-            data["uuid"]: {
+            int(data["uuid"]): {
                 "name": data["name"],
                 "address": address
             } for uuid, data in self.occupancy_data.items() if data["present"] is True
