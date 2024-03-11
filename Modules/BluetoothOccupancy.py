@@ -82,7 +82,7 @@ class BlueStalker(RoomObject):
         if bluetooth is None or bluetoothLE is None:
             self.reboot_locked_out = True
 
-        self.heartbeat_device = "D8:3A:DD:6B:59:72"
+        self.heartbeat_device = "00:1A:7D:DA:71:13"
         self.heartbeat_alive = False  # If the heartbeat device is alive
 
         if bluetooth is not None:
