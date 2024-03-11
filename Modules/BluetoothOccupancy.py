@@ -158,6 +158,8 @@ class BlueStalker(RoomObject):
                 self.connect(self.heartbeat_device, is_heartbeat=True)
         except Exception as e:
             logging.error(f"BlueStalker: Error checking heartbeat device: {e}")
+            logging.exception(e)
+            self.heartbeat_alive = False
 
         if not self.heartbeat_alive and heartbeat_was_alive:
             logging.error("BlueStalker: Heartbeat device lost, delaying next scan")
