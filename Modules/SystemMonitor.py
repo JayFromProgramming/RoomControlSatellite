@@ -133,6 +133,7 @@ class SystemMonitorLocal(RoomObject):
                 self.set_value("uptime_controller", round(time.time() - psutil.Process().create_time()),
                                block_event=True)
                 self.set_value("address", self.get_ip(), block_event=True)
+                self.emit_event("system_values_updated")
 
             except Exception as e:
                 logging.error(f"Error: {e}")
