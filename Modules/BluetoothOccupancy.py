@@ -151,16 +151,6 @@ class BlueStalker(RoomObject):
         logging.debug("BlueStalker: Starting Life Check")
 
         heartbeat_was_alive = self.heartbeat_alive
-        try:
-            # Check if the heartbeat device is still connected
-            if self.heartbeat_alive and self.sockets.get(self.heartbeat_device):
-                self.conn_is_alive(self.sockets[self.heartbeat_device], self.heartbeat_device, is_heartbeat=True)
-            else:
-                self.connect(self.heartbeat_device, is_heartbeat=True)
-        except Exception as e:
-            logging.error(f"BlueStalker: Error checking heartbeat device: {e}")
-            logging.exception(e)
-            self.heartbeat_alive = False
 
         if not self.heartbeat_alive and heartbeat_was_alive:
             logging.error("BlueStalker: Heartbeat device lost, delaying next scan")
@@ -184,6 +174,17 @@ class BlueStalker(RoomObject):
         for target in self.target_mac_addresses:
             if self.sockets.get(target) is None:  # If the socket is already open
                 conn_threads.append(self.connect(target))  # Else attempt to connect to the device
+
+        try:
+            # Check if the heartbeat device is still connected
+            if self.heartbeat_alive and self.sockets.get(self.heartbeat_device):
+                self.conn_is_alive(self.sockets[self.heartbeat_device], self.heartbeat_device, is_heartbeat=True)
+            else:
+                self.connect(self.heartbeat_device, is_heartbeat=True)
+        except Exception as e:
+            logging.error(f"BlueStalker: Error checking heartbeat device: {e}")
+            logging.exception(e)
+            self.heartbeat_alive = False
 
         for thread in conn_threads:
             thread.join()
@@ -259,8 +260,9 @@ class BlueStalker(RoomObject):
             logging.debug(f"BlueStalker: Connecting to {address}, timeout {sock.gettimeout()}")
             sock.connect((address, 1))  # Start the connection (Will fail with EINPROGRESS)
         except bluetooth.btcommon.BluetoothError as e:
-            if e.__str__() == "[Errno 111] Connection refused":  # Connection refused still counts as a connection as
-                # the device had to be in range to refuse the connection
+            if e.__str__() == "[Errno 111] Connection refused":
+                # Connection refused still counts as a device being present because in order to refuse a connection
+                # the device must be in range and have a working radio
                 logging.error(f"BlueStalker: Connection to address {address} refused, device is in range")
                 if not is_heartbeat:
                     self.update_occupancy(address, True)
