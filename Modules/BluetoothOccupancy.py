@@ -82,7 +82,7 @@ class BlueStalker(RoomObject):
         if bluetooth is None or bluetoothLE is None:
             self.reboot_locked_out = True
 
-        self.heartbeat_device = "00:1A:7D:DA:71:13"
+        self.heartbeat_device = "D8:3A:DD:6B:59:72"
         self.heartbeat_alive = False  # If the heartbeat device is alive
 
         if bluetooth is not None:
@@ -152,10 +152,10 @@ class BlueStalker(RoomObject):
         heartbeat_was_alive = self.heartbeat_alive
         try:
             # Check if the heartbeat device is still connected
-            if self.heartbeat_alive:
-                self.conn_is_alive(self.sockets[self.heartbeat_device], self.heartbeat_device, is_heartbeat=True)
-            else:
-                self.connect(self.heartbeat_device, is_heartbeat=True)
+            # if self.heartbeat_alive:
+            #     self.conn_is_alive(self.sockets[self.heartbeat_device], self.heartbeat_device, is_heartbeat=True)
+            # else:
+            self.connect(self.heartbeat_device, is_heartbeat=True)
         except Exception as e:
             logging.error(f"BlueStalker: Error checking heartbeat device: {e}")
             logging.exception(e)
