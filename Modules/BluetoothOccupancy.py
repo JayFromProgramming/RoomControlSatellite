@@ -84,6 +84,7 @@ class BlueStalker(RoomObject):
 
         self.heartbeat_device = "D8:3A:DD:6B:59:72"
         self.heartbeat_alive = False  # If the heartbeat device is alive
+        self.heartbeat_failed_attempts = 0
 
         if bluetooth is not None:
             self.online = True
@@ -265,13 +266,14 @@ class BlueStalker(RoomObject):
                     self.update_occupancy(address, True)
                 else:
                     self.heartbeat_alive = True
+                    self.heartbeat_failed_attempts = 0
                 return
             elif e.__str__() == "[Errno 115] Operation now in progress":  # This is the error we expect to see
                 logging.debug(f"BlueStalker: Connection to {address} is in progress")
                 if not is_heartbeat:
                     self.update_occupancy(address, False)
                 else:
-                    self.heartbeat_alive = False
+                    self.heartbeat_failed_attempts += 1
                 self.sockets[address] = sock  # Add the socket to the list of sockets
                 time.sleep(2.5)  # Wait for the connection to complete
                 self.conn_is_alive(sock, address)  # Check if the connection is still alive
@@ -286,14 +288,14 @@ class BlueStalker(RoomObject):
                 if not is_heartbeat:
                     self.update_occupancy(address, False)
                 else:
-                    self.heartbeat_alive = False
+                    self.heartbeat_failed_attempts += 1
                 return
         except OSError as e:  # Any additional errors that the OS throws are caught here
             logging.error(f"BlueStalker: Failed to connect to {address} with error {e}")
             if not is_heartbeat:
                 self.update_occupancy(address, False)
             else:
-                self.heartbeat_alive = False
+                self.heartbeat_failed_attempts += 1
             return
         else:
             logging.debug(f"BlueStalker: Connected to {address}")
@@ -303,6 +305,9 @@ class BlueStalker(RoomObject):
                 self.update_occupancy(address, True)
             else:
                 self.heartbeat_alive = True
+        if self.heartbeat_failed_attempts > 3:
+            logging.error("BlueStalker: Heartbeat device failed 3 connection attempts, marking as dead")
+            self.heartbeat_alive = False
 
     @background
     def conn_is_alive(self, connection, address):
