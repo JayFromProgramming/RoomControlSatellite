@@ -152,10 +152,10 @@ class BlueStalker(RoomObject):
         heartbeat_was_alive = self.heartbeat_alive
         try:
             # Check if the heartbeat device is still connected
-            # if self.heartbeat_alive:
-            #     self.conn_is_alive(self.sockets[self.heartbeat_device], self.heartbeat_device, is_heartbeat=True)
-            # else:
-            self.connect(self.heartbeat_device, is_heartbeat=True)
+            if self.heartbeat_alive and self.sockets.get(self.heartbeat_device):
+                self.conn_is_alive(self.sockets[self.heartbeat_device], self.heartbeat_device, is_heartbeat=True)
+            else:
+                self.connect(self.heartbeat_device, is_heartbeat=True)
         except Exception as e:
             logging.error(f"BlueStalker: Error checking heartbeat device: {e}")
             logging.exception(e)
