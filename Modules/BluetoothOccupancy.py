@@ -77,6 +77,8 @@ class BlueStalker(RoomObject):
         self.set_value("occupied", None)
         self.set_value("high_frequency_scan_enabled", self.high_frequency_scan_enabled)
 
+        self.attach_event_callback(self.should_scan, "scan")
+
         if bluetooth is None or bluetoothLE is None:
             self.reboot_locked_out = True
 
