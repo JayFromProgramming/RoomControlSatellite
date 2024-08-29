@@ -32,7 +32,7 @@ def get_host_names(filter_local=True):
 
 class LinkHost(RoomModule):
     is_webserver = True
-    host_address = "moldy.mug.loafclan.org"
+    host_address = "moldy.mug.local.loafclan.org"
 
     def __init__(self, room_controller):
         super().__init__(room_controller)
