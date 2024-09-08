@@ -61,6 +61,7 @@ class Relay(RoomObject):
         logging.info(f"Relay ({name}): Initialized with default state {default_state}")
         self.attach_event_callback("set_on", self.set_on)
         self.attach_event_callback("heartbeat", self.heartbeat)
+        self.check_heartbeat()
 
     def set_relay_state(self, state):
         if state:
