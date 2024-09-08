@@ -77,7 +77,7 @@ class Relay(RoomObject):
     @background
     def check_heartbeat(self):
         while True:
-            if time.time() - self.last_heartbeat > 60:
+            if time.time() - self.last_heartbeat > 120:
                 logging.warning(f"Relay ({self.name()}): Heartbeat timeout")
                 self.fault = True
                 self.fault_message = "Heartbeat timeout"
