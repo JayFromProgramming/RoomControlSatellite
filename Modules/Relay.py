@@ -18,6 +18,7 @@ except ImportError:
 class RelayHost(RoomModule):
 
     def __init__(self, room_controller):
+        logging.info("RelayHost: Initializing")
         super().__init__(room_controller)
         self.relays = []
         self.relay_configs = json.load(open("Configs/Relays.json"))
@@ -36,6 +37,7 @@ class Relay(RoomObject):
 
     def __init__(self, name, pin, normally_open=True, default_state=False):
         super().__init__(name, "Relay")
+        logging.info(f"Relay ({name}): Initializing")
         self.online = True
         self.fault = False
         self.fault_message = ""
@@ -53,6 +55,7 @@ class Relay(RoomObject):
 
         GPIO.setup(self.pin, GPIO.OUT)
         self.set_state(default_state)
+        logging.info(f"Relay ({name}): Initialized with default state {default_state}")
 
     def set_state(self, state):
         if state:
