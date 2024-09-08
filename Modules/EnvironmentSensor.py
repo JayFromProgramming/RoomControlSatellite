@@ -194,7 +194,7 @@ class EnvironmentSensor(Sensor):
                         self.set_fault(True, "Sensor returned None")
 
                     else:
-                        self.values["temperature"].roll_average(convert_cel_to_fahr(temperature))
+                        self.values["temperature"].roll_average(temperature)
                         self.values["humidity"].roll_average(round(humidity, 2))
                         self.last_updated = datetime.datetime.now()
                         # logging.info(f"EnvironmentSensor ({self.name}): Sensor read successful")
