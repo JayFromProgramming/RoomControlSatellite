@@ -83,3 +83,5 @@ class Relay(RoomObject):
             "fault_message": self.fault_message,
         }
 
+    def set_on(self, state):
+        self.set_relay_state(state)
