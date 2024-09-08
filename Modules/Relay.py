@@ -56,6 +56,7 @@ class Relay(RoomObject):
         GPIO.setup(self.pin, GPIO.OUT)
         self.set_relay_state(default_state)
         logging.info(f"Relay ({name}): Initialized with default state {default_state}")
+        self.attach_event_callback("set_on", self.set_on)
 
     def set_relay_state(self, state):
         if state:
@@ -84,4 +85,5 @@ class Relay(RoomObject):
         }
 
     def set_on(self, state):
+        logging.info(f"Relay ({self.name()}): Setting state to {state}")
         self.set_relay_state(state)
