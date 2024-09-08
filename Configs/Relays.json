@@ -1,7 +1,7 @@
 [
   {
     "name": "Radiator",
-    "pin": 15,
+    "pin": 8,
     "normallyOpen": true,
     "defaultState": false
   }
