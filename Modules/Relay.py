@@ -47,6 +47,8 @@ class Relay(RoomObject):
 
         self.normal_open = normally_open
 
+        super().set_value("on", None)
+
         if GPIO is None:
             self.fault = True
             self.fault_message = "RPi.GPIO not found"
@@ -65,14 +67,11 @@ class Relay(RoomObject):
             GPIO.output(self.pin, GPIO.HIGH if self.normal_open else GPIO.LOW)
         self.relay_state = state
         self.emit_event("on_state_update", state)
+        logging.info(f"Relay ({self.name()}): State set to {state}")
+        super().set_value("on", state)
 
     def name(self):
         return self._name
-
-    def get_state(self):
-        return {
-            "on": self.state,
-        }
 
     def get_type(self):
         return "Relay"
