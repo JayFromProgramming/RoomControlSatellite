@@ -71,6 +71,7 @@ class Relay(RoomObject):
         self.emit_event("on_state_update", state)
         logging.info(f"Relay ({self.name()}): State set to {state}")
         super().set_value("on", state)
+        super().emit_event("state_change", self.get_state())
 
     @background
     def check_heartbeat(self):
@@ -81,6 +82,11 @@ class Relay(RoomObject):
                 self.fault_message = "Heartbeat timeout"
                 self.set_relay_state(False)
             time.sleep(120)
+
+    def get_state(self):
+        return {
+            "on": self.relay_state
+        }
 
     def name(self):
         return self._name
