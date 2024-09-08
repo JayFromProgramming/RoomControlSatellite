@@ -42,7 +42,7 @@ class Relay(RoomObject):
         self.fault = False
         self.fault_message = ""
         self.pin = pin  # Pin number
-        self.state = None  # None = Unknown, True = On, False = Off
+        self.relay_state = None  # None = Unknown, True = On, False = Off
         self._name = name  # Name of the device
 
         self.normal_open = normally_open
@@ -54,16 +54,32 @@ class Relay(RoomObject):
             return
 
         GPIO.setup(self.pin, GPIO.OUT)
-        self.set_state(default_state)
+        self.set_relay_state(default_state)
         logging.info(f"Relay ({name}): Initialized with default state {default_state}")
 
-    def set_state(self, state):
+    def set_relay_state(self, state):
         if state:
             GPIO.output(self.pin, GPIO.LOW if self.normal_open else GPIO.HIGH)
         else:
             GPIO.output(self.pin, GPIO.HIGH if self.normal_open else GPIO.LOW)
-        self.state = state
+        self.relay_state = state
         self.emit_event("on_state_update", state)
 
+    def name(self):
+        return self._name
+
     def get_state(self):
-        return self.state
+        return {
+            "on": self.state,
+        }
+
+    def get_type(self):
+        return "Relay"
+
+    def get_health(self):
+        return {
+            "online": self.online,
+            "fault": self.fault,
+            "fault_message": self.fault_message,
+        }
+
