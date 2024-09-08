@@ -44,6 +44,7 @@ class Relay(RoomObject):
         self.pin = pin  # Pin number
         self.relay_state = None  # None = Unknown, True = On, False = Off
         self._name = name  # Name of the device
+        self.last_heartbeat = time.time()
 
         self.normal_open = normally_open
 
@@ -59,6 +60,7 @@ class Relay(RoomObject):
         self.set_relay_state(default_state)
         logging.info(f"Relay ({name}): Initialized with default state {default_state}")
         self.attach_event_callback("set_on", self.set_on)
+        self.attach_event_callback("heartbeat", self.heartbeat)
 
     def set_relay_state(self, state):
         if state:
@@ -69,6 +71,16 @@ class Relay(RoomObject):
         self.emit_event("on_state_update", state)
         logging.info(f"Relay ({self.name()}): State set to {state}")
         super().set_value("on", state)
+
+    @background
+    def check_heartbeat(self):
+        while True:
+            if time.time() - self.last_heartbeat > 60:
+                logging.warning(f"Relay ({self.name()}): Heartbeat timeout")
+                self.fault = True
+                self.fault_message = "Heartbeat timeout"
+                self.set_relay_state(False)
+            time.sleep(120)
 
     def name(self):
         return self._name
@@ -86,3 +98,7 @@ class Relay(RoomObject):
     def set_on(self, state):
         logging.info(f"Relay ({self.name()}): Setting state to {state}")
         self.set_relay_state(state)
+
+    def heartbeat(self):
+        self.last_heartbeat = time.time()
+        logging.debug(f"Relay ({self.name()}): Heartbeat")
