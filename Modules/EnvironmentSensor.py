@@ -183,7 +183,7 @@ class EnvironmentSensor(Sensor):
             if self.sensor:
                 try:
                     # logging.info(f"EnvironmentSensor ({self.name}): Reading sensor")
-                    humidity, temperature = self.sensor.get_temperature(), self.sensor.get_humidity()
+                    humidity, temperature = self.sensor.get_humidity(), convert_cel_to_fahr(self.sensor.get_temperature())
                     if humidity == 0 and temperature == 0:
                         logging.warning(f"EnvironmentSensor ({self.name}): Sensor returned 0")
                         self.set_fault(True, "Sensor returned 0")
