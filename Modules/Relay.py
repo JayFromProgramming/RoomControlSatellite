@@ -108,4 +108,7 @@ class Relay(RoomObject):
 
     def heartbeat(self):
         self.last_heartbeat = time.time()
+        if self.fault:
+            self.fault = False
+            self.fault_message = ""
         logging.debug(f"Relay ({self.name()}): Heartbeat")
