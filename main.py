@@ -9,21 +9,18 @@ import os
 from Modules.RoomModule import RoomModule
 from Modules.RoomObject import RoomObject
 
-# for module in os.listdir("Modules"):
-#     if module.endswith(".py") and module != "__init__.py":
-#         module_name = module.replace(".py", "")
-#         logging.info(f"Importing {module_name}")
-#         __import__(f"Modules.{module_name}", fromlist=[module_name])
-#     if os.path.isdir(f"Modules/{module}"):
-#         logging.info(f"Importing {module}")
-#         for module_file in os.listdir(f"Modules/{module}"):
-#             if module_file.endswith(".py") and module_file != "__init__.py":
-#                 module_name = module_file.replace(".py", "")
-#                 logging.info(f"Importing {module_name} from {module}")
-#                 __import__(f"Modules.{module}.{module_name}", fromlist=[module_name])
-
-from Modules.LinkHost import LinkHost
-from Modules.BluetoothOccupancy import BluetoothOccupancy
+for module in os.listdir("Modules"):
+    if module.endswith(".py") and module != "__init__.py":
+        module_name = module.replace(".py", "")
+        logging.info(f"Importing {module_name}")
+        __import__(f"Modules.{module_name}", fromlist=[module_name])
+    if os.path.isdir(f"Modules/{module}"):
+        logging.info(f"Importing {module}")
+        for module_file in os.listdir(f"Modules/{module}"):
+            if module_file.endswith(".py") and module_file != "__init__.py":
+                module_name = module_file.replace(".py", "")
+                logging.info(f"Importing {module_name} from {module}")
+                __import__(f"Modules.{module}.{module_name}", fromlist=[module_name])
 
 class ObjectPointer:
 
